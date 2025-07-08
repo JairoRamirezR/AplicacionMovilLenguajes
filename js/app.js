@@ -1,6 +1,5 @@
 import { registerUser, loginUser, logoutUser, isAuthenticated } from './auth.js';
 import { loadDishes, showDishDetails } from './dishes.js';
-// Import confirmOrder, loadCart, updateCartIcon, and the new functions for cart item manipulation
 import { loadCart, updateCartIcon, confirmOrder, updateCartOnServer, removeFromCartOnServer } from './cart.js';
 import { loadUserProfile, updateProfile, changePassword } from './profile.js';
 import { showSection } from './utils.js';
@@ -155,6 +154,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita el envío del formulario por defecto
+
+            const name = document.getElementById('profileName').value;
+            const lastName = document.getElementById('profileLastName').value;
+            const address = document.getElementById('profileAddress').value;
+
+            // Llama a la función de actualización del perfil
+            await updateProfile(name, lastName, address);
+        });
+    }
+
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita el envío del formulario por defecto
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+            // Llama a la función de cambio de contraseña
+            await changePassword(currentPassword, newPassword, confirmNewPassword);
+        });
+    }
+    
     document.getElementById('logoutButton').addEventListener('click', (e) => {
         e.preventDefault();
         logoutUser();

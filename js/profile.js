@@ -4,37 +4,73 @@ import { fetchData } from './utils.js';
 
 export async function loadUserProfile() {
     try {
-        const profileData = await fetchData('/api/profile'); // Your endpoint to get the profile
-        document.getElementById('profileFullName').value = profileData.fullName;
-        document.getElementById('profileEmail').value = profileData.email; // Email is displayed but not editable
-        document.getElementById('profileAddress').value = profileData.address;
-        // ... (Display other data if it exists)
+        const profileData = await fetchData('/api/account/profile'); // Tu endpoint para obtener el perfil
+        // Asegúrate de que profileData contenga name, lastName, email y address
+        if (profileData) {
+            document.getElementById('profileEmail').value = profileData.email || ''; // Email es readonly
+            document.getElementById('profileName').value = profileData.name || ''; // Cambiado de profileFullName
+            document.getElementById('profileLastName').value = profileData.lastName || ''; // Añadido
+            document.getElementById('profileAddress').value = profileData.address || '';
+        } else {
+            toastr.error('No se pudo cargar la información del perfil. Datos de perfil incompletos.');
+        }
     } catch (error) {
         console.error('Error loading profile:', error);
-        alert('Could not load profile information.');
+        toastr.error('No se pudo cargar la información del perfil.');
     }
 }
 
-export async function updateProfile(fullName, address) {
+// Ahora recibe name, lastName y address por separado
+export async function updateProfile(name, lastName, address) {
     try {
-        const dataToUpdate = { fullName, address };
-        await fetchData('/api/profile/update', 'PUT', dataToUpdate);
-        alert('Profile updated successfully!');
-        // Optional: reload profile or redirect
+        const dataToUpdate = { name, lastName, address }; // Enviar name y lastName
+        const response = await fetchData('/api/account/profile/update', 'PUT', dataToUpdate);
+
+        if (response.success) {
+            toastr.success('¡Perfil actualizado exitosamente!');
+            // Opcional: recargar el perfil si hay campos que se calculan o modifican en el backend
+            loadUserProfile();
+        } else {
+            // Manejar errores específicos devueltos por el backend
+            toastr.error(response.message || 'Error al actualizar el perfil.');
+        }
     } catch (error) {
         console.error('Error updating profile:', error);
-        alert('Error updating profile: ' + error.message);
+        toastr.error('Error al actualizar el perfil: ' + (error.message || 'Error desconocido'));
     }
 }
 
-export async function changePassword(currentPassword, newPassword) {
+export async function changePassword(currentPassword, newPassword, confirmNewPassword) {
+    if (newPassword !== confirmNewPassword) {
+        Swal.fire('Error', 'La nueva contraseña y la confirmación no coinciden.', 'error');
+        return false;
+    }
+    if (newPassword.length < 6) { // O la longitud mínima que tengas configurada en Identity
+        Swal.fire('Error', 'La nueva contraseña debe tener al menos 6 caracteres.', 'error');
+        return false;
+    }
+
     try {
-        const dataToUpdate = { currentPassword, newPassword };
-        await fetchData('/api/profile/changePassword', 'PUT', dataToUpdate);
-        alert('Password changed successfully!');
-        // Optional: redirect to login or show message
+        const dataToUpdate = { currentPassword, newPassword }; // Backend solo necesita estos dos
+        const response = await fetchData('/api/account/profile/changePassword', 'PUT', dataToUpdate);
+
+        if (response.success) {
+            toastr.success('¡Contraseña cambiada exitosamente! Por favor, vuelve a iniciar sesión.');
+            // Puedes forzar un logout para que el usuario inicie sesión con la nueva contraseña
+            setTimeout(() => {
+                // Asumiendo que tienes una función logoutUser global o accesible
+                window.location.hash = '#login';
+                localStorage.removeItem('authToken'); // Limpia el token JWT
+                // Si tienes un endpoint de logout en el backend para cookies, llámalo aquí
+            }, 2000);
+            return true;
+        } else {
+            toastr.error(response.message || 'Error al cambiar la contraseña.');
+            return false;
+        }
     } catch (error) {
         console.error('Error changing password:', error);
-        alert('Error changing password: ' + error.message);
+        toastr.error('Error al cambiar la contraseña: ' + (error.message || 'Error desconocido'));
+        return false;
     }
 }
