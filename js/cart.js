@@ -1,5 +1,3 @@
-// js/cart.js
-
 // Importamos la función fetchData del archivo utils.js para manejar todas las solicitudes AJAX
 import { fetchData } from './utils.js';
 
@@ -8,20 +6,20 @@ export async function addToCart(dishId, dishName, dishPrice, quantity = 1) {
     try {
         const response = await fetchData('/Customer/Cart/AddToCart', 'POST', {
             dishId: dishId,
-            dishName: dishName, // Aunque el backend podría ignorarlo y tomarlo de la DB, lo enviamos para consistencia.
-            dishPrice: dishPrice, // Ídem.
+            dishName: dishName, // Backend will likely ignore this and get actual dish name from DB
+            dishPrice: dishPrice, // Backend will likely ignore this and get actual dish price from DB
             quantity: quantity
         });
 
         if (response.success) {
             toastr.success(response.message);
-            updateCartIcon(); // Actualiza el contador del carrito en la UI
-            // Opcional: Podrías no redirigir inmediatamente, o dar más control al usuario
-            // setTimeout(() => { window.location.hash = '#menu'; }, 1000); // Redirige al menú principal después de un tiempo
+            updateCartIcon(); // Update cart counter in the UI
+            // Optional: You might not want to redirect immediately, or give user more control
+            // setTimeout(() => { window.location.hash = '#menu'; }, 1000); // Redirect to main menu after a delay
         } else {
             toastr.error(response.message);
             if (response.redirectUrl) {
-                // Si el backend indica una redirección (ej. a login por falta de autenticación)
+                // If backend indicates a redirect (e.g., to login due to lack of authentication)
                 setTimeout(() => { window.location.href = response.redirectUrl; }, 1000);
             }
         }
@@ -113,15 +111,15 @@ export async function loadCart() {
 
         $('#cart-subtotal').text(subtotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' }));
         $('#cart-total').text(subtotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' }));
-        updateCartIcon(); // Asegura que el ícono se actualice después de renderizar el carrito
+        updateCartIcon(); // Ensure the icon updates after rendering the cart
     } catch (error) {
         console.error("Error fetching cart data:", error);
         toastr.error("Error loading cart. Please try again.");
     }
 }
 
-// Función para actualizar la cantidad de un item en el carrito en el servidor
-async function updateCartOnServer(dishId, newQuantity) {
+// Function to update item quantity in the cart on the server
+export async function updateCartOnServer(dishId, newQuantity) {
     try {
         const response = await fetchData('/Customer/Cart/UpdateCart', 'POST', {
             dishId: dishId,
@@ -130,7 +128,7 @@ async function updateCartOnServer(dishId, newQuantity) {
 
         if (response.success) {
             toastr.success(response.message);
-            await loadCart(); // Re-renderiza el carrito completo para reflejar los cambios
+            await loadCart(); // Re-render the entire cart to reflect changes
             updateCartIcon();
         } else {
             toastr.error(response.message);
@@ -141,14 +139,15 @@ async function updateCartOnServer(dishId, newQuantity) {
     }
 }
 
-// Función para remover un item del carrito en el servidor
-async function removeFromCartOnServer(dishId) {
+// Function to remove an item from the cart on the server
+export async function removeFromCartOnServer(dishId) {
     try {
-        const response = await fetchData('/Customer/Cart/RemoveFromCart', 'POST', dishId); // Enviamos el ID directamente
+        // The backend expects an integer, not a wrapped object.
+        const response = await fetchData('/Customer/Cart/RemoveFromCart', 'POST', dishId);
 
         if (response.success) {
             toastr.info(response.message);
-            await loadCart(); // Re-renderiza el carrito completo
+            await loadCart(); // Re-render the entire cart
             updateCartIcon();
         } else {
             toastr.error(response.message);
@@ -159,7 +158,7 @@ async function removeFromCartOnServer(dishId) {
     }
 }
 
-// Función para actualizar el número en el ícono del carrito
+// Function to update the number on the cart icon
 export async function updateCartIcon() {
     try {
         const data = await fetchData('/Customer/Cart/GetCartData', 'GET');
@@ -171,20 +170,15 @@ export async function updateCartIcon() {
         }
     } catch (error) {
         console.error("Error updating cart icon:", error);
-        // Opcional: Puedes manejar el error, ej. establecer el ícono a 0 o dejarlo como está
+        // Optional: You can handle the error, e.g., set the icon to 0 or leave it as is
     }
 }
 
-// Función para confirmar el pedido
+// Function to confirm the order
 export async function confirmOrder() {
     try {
-        const data = await fetchData('/Customer/Cart/GetCartData', 'GET'); // Obtener el estado actual del carrito desde el servidor
-        let cartItems = data.cartItems || [];
-
-        if (cartItems.length === 0) {
-            toastr.warning("Your cart is empty. Please add some dishes before proceeding to checkout!");
-            return;
-        }
+        // No need to fetch cart data here. The backend will read it directly from the DB.
+        // This makes the client-side call more secure as it doesn't trust client data for order processing.
 
         const result = await Swal.fire({
             title: 'Confirm Order',
@@ -197,12 +191,13 @@ export async function confirmOrder() {
         });
 
         if (result.isConfirmed) {
-            const placeOrderResponse = await fetchData('/Customer/Cart/PlaceOrder', 'POST', cartItems); // Enviar los datos del carrito del servidor
+            // Call PlaceOrder WITHOUT sending cart data from the client
+            const placeOrderResponse = await fetchData('/Customer/Cart/PlaceOrder', 'POST', {}); // Send an empty object or null if your backend action allows
 
             if (placeOrderResponse.success) {
-                // Si el pedido se colocó con éxito, limpiar el carrito en el servidor
-                await fetchData('/Customer/Cart/ClearCart', 'POST');
-                updateCartIcon(); // Actualizar el ícono después de limpiar
+                // After successful order, the backend will have already cleared the cart in the DB.
+                // We just need to update the cart icon on the frontend.
+                updateCartIcon(); // Update cart icon after clearing on backend
 
                 await Swal.fire({
                     title: 'Order Placed!',
@@ -210,7 +205,7 @@ export async function confirmOrder() {
                     icon: 'success',
                     confirmButtonText: 'OK'
                 });
-                window.location.hash = '#menu'; // Redirigir al menú principal
+                window.location.hash = '#menu'; // Redirect to the main menu
             } else {
                 if (placeOrderResponse.redirectUrl) {
                     toastr.error(placeOrderResponse.message);
@@ -225,33 +220,3 @@ export async function confirmOrder() {
         toastr.error("An error occurred while trying to process your order. Please try again.");
     }
 }
-
-// --- Event Listeners para la interacción del carrito ---
-// Estos listeners deben ser globales o manejados en app.js después de que el DOM esté cargado.
-// Aquí los incluimos para que los copies a tu app.js o te asegures de que estén presentes.
-$(document).on('click', '.increment-quantity', function () {
-    let dishId = parseInt($(this).data('dish-id'));
-    let quantityInput = $(`input.quantity-input[data-dish-id="${dishId}"]`);
-    let currentQuantity = parseInt(quantityInput.val());
-    updateCartOnServer(dishId, currentQuantity + 1);
-});
-
-$(document).on('click', '.decrement-quantity', function () {
-    let dishId = parseInt($(this).data('dish-id'));
-    let quantityInput = $(`input.quantity-input[data-dish-id="${dishId}"]`);
-    let currentQuantity = parseInt(quantityInput.val());
-    if (currentQuantity > 1) {
-        updateCartOnServer(dishId, currentQuantity - 1);
-    } else {
-        removeFromCartOnServer(dishId);
-    }
-});
-
-$(document).on('click', '.remove-item', function () {
-    let dishId = parseInt($(this).data('dish-id'));
-    removeFromCartOnServer(dishId);
-});
-
-// Nota: El botón 'proceed-to-checkout-btn' y la llamada a loadCart en DOMContentLoaded
-// deben manejarse en app.js para mantener la modularidad.
-// Asegúrate de importar estas funciones en app.js y conectarlas a los eventos de UI.

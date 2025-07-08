@@ -1,8 +1,7 @@
-// js/app.js
-
-import { registerUser, loginUser, logoutUser, isAuthenticated } from './auth.js'; // Descomentado
+import { registerUser, loginUser, logoutUser, isAuthenticated } from './auth.js';
 import { loadDishes, showDishDetails } from './dishes.js';
-import { loadCart, updateCartIcon, confirmOrder } from './cart.js';
+// Import confirmOrder, loadCart, updateCartIcon, and the new functions for cart item manipulation
+import { loadCart, updateCartIcon, confirmOrder, updateCartOnServer, removeFromCartOnServer } from './cart.js';
 import { loadUserProfile, updateProfile, changePassword } from './profile.js';
 import { showSection } from './utils.js';
 
@@ -15,24 +14,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const hash = window.location.hash;
 
         // Lógica de visibilidad de la barra de navegación basada en autenticación
-        if (isAuthenticated()) { // Descomentado
+        if (isAuthenticated()) {
             document.querySelector('.navbar').classList.remove('d-none');
-            document.getElementById('authSection').classList.add('d-none'); // Asegurarse de que el formulario de login/registro esté oculto
+            document.getElementById('authSection').classList.add('d-none'); // Ensure auth form is hidden
         } else {
-            document.querySelector('.navbar').classList.add('d-none'); // Ocultar barra de navegación si no está autenticado
-            showSection('authSection'); // Mostrar sección de autenticación
-            // Si el hash no es #login o #register, forzarlo a #login
+            document.querySelector('.navbar').classList.add('d-none'); // Hide navbar if not authenticated
+            showSection('authSection'); // Show authentication section
+            // If the hash is not #login or #register, force it to #login
             if (hash !== '#login' && hash !== '#register') {
                  window.location.hash = '#login';
-                 return; // Salir para que handleLocationHash se vuelva a llamar con el hash correcto
+                 return; // Exit so handleLocationHash is called again with the correct hash
             }
         }
 
-
         if (hash.startsWith('#details')) {
-            // ... (tu lógica existente) ...
-            if (!isAuthenticated()) { // Añadir esta comprobación
-                window.location.hash = '#login'; // Redirigir a login si intentan ver detalles sin auth
+            if (!isAuthenticated()) { // Add this check
+                window.location.hash = '#login'; // Redirect to login if trying to view details without auth
                 return;
             }
             showSection('detailsSection');
@@ -57,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch (hash) {
             case '#menu':
-                if (!isAuthenticated()) { // Añadir esta comprobación
+                if (!isAuthenticated()) { // Add this check
                     window.location.hash = '#login';
                     return;
                 }
@@ -65,23 +62,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadDishes();
                 break;
             case '#cart':
-                if (!isAuthenticated()) { // Añadir esta comprobación
+                if (!isAuthenticated()) { // Add this check
                     window.location.hash = '#login';
                     return;
                 }
                 showSection('cartSection');
-                loadCart();
+                loadCart(); // Load cart data from the server
                 break;
             case '#profile':
-                if (!isAuthenticated()) { // Añadir esta comprobación
+                if (!isAuthenticated()) { // Add this check
                     window.location.hash = '#login';
                     return;
                 }
                 showSection('profileSection');
                 loadUserProfile();
                 break;
-            case '#login': // Nuevo caso para la sección de login
-                if (isAuthenticated()) { // Si ya está logueado, redirigir al menú
+            case '#login': // New case for the login section
+                if (isAuthenticated()) { // If already logged in, redirect to menu
                     window.location.hash = '#menu';
                     return;
                 }
@@ -89,8 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('loginForm').classList.remove('d-none');
                 document.getElementById('registerForm').classList.add('d-none');
                 break;
-            case '#register': // Nuevo caso para la sección de registro
-                if (isAuthenticated()) { // Si ya está logueado, redirigir al menú
+            case '#register': // New case for the registration section
+                if (isAuthenticated()) { // If already logged in, redirect to menu
                     window.location.hash = '#menu';
                     return;
                 }
@@ -99,8 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('loginForm').classList.add('d-none');
                 break;
             default:
-                // Si no hay hash o no coincide, y no está autenticado, redirigir a login.
-                // Si está autenticado, redirigir a #menu.
+                // If no hash or it doesn't match, and not authenticated, redirect to login.
+                // If authenticated, redirect to #menu.
                 if (!isAuthenticated()) {
                     window.location.hash = '#login';
                 } else {
@@ -111,9 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.addEventListener('hashchange', handleLocationHash);
-    handleLocationHash(); // Llama al cargar la página
+    handleLocationHash(); // Call on page load
 
-    // --- Authentication Event Listeners (Descomentados) ---
+    // --- Authentication Event Listeners ---
     document.getElementById('showRegisterLink').addEventListener('click', (e) => {
         e.preventDefault();
         window.location.hash = '#register';
@@ -128,8 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         await loginUser(email, password);
-        // Si el login es exitoso, loginUser ya redirige a #menu
-        updateCartIcon(); // Actualizar icono del carrito después del login
+        // If login is successful, loginUser already redirects to #menu
+        updateCartIcon(); // Update cart icon after login
     });
 
     document.getElementById('registerBtn').addEventListener('click', async () => {
@@ -147,19 +144,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const success = await registerUser(email, password, fullName, address);
         if (success) {
             Swal.fire('Success', 'Registration successful! You are now logged in.', 'success');
-            updateCartIcon(); // Actualizar icono del carrito después del registro
+            updateCartIcon(); // Update cart icon after registration
         }
     });
 
     document.getElementById('logoutButton').addEventListener('click', (e) => {
         e.preventDefault();
         logoutUser();
-        updateCartIcon(); // Actualizar icono del carrito después del logout (debería ser 0)
+        updateCartIcon(); // Update cart icon after logout (should be 0)
     });
 
-    // ... (El resto de tus Event Listeners para Cart y Profile, y Dish Search) ...
+    // --- Cart Event Listeners (Delegated using jQuery for dynamically added elements) ---
+    // Handle incrementing quantity
+    $(document).on('click', '.increment-quantity', function () {
+        let dishId = parseInt($(this).data('dish-id'));
+        let quantityInput = $(`input.quantity-input[data-dish-id="${dishId}"]`);
+        let currentQuantity = parseInt(quantityInput.val());
+        updateCartOnServer(dishId, currentQuantity + 1);
+    });
+
+    // Handle decrementing quantity
+    $(document).on('click', '.decrement-quantity', function () {
+        let dishId = parseInt($(this).data('dish-id'));
+        let quantityInput = $(`input.quantity-input[data-dish-id="${dishId}"]`);
+        let currentQuantity = parseInt(quantityInput.val());
+        if (currentQuantity > 1) {
+            updateCartOnServer(dishId, currentQuantity - 1);
+        } else {
+            // If quantity goes to 0 or less, remove the item
+            removeFromCartOnServer(dishId);
+        }
+    });
+
+    // Handle removing item directly
+    $(document).on('click', '.remove-item', function () {
+        let dishId = parseInt($(this).data('dish-id'));
+        removeFromCartOnServer(dishId);
+    });
+
+    // Event listener for the "Confirm Order" button
+    document.getElementById('confirmOrderBtn').addEventListener('click', async () => {
+        await confirmOrder();
+    });
 
     // --- Additional Initialization ---
-    // Ensure the cart icon is updated when the page loads, based on auth status
-    updateCartIcon();
+    updateCartIcon(); // Ensure the cart icon is updated when the page loads, based on auth status
 });
