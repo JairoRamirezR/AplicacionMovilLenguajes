@@ -3,7 +3,7 @@
 import { fetchData } from './utils.js';
 import { addToCart } from './cart.js';
 
-const BACKEND_IMAGE_BASE_URL = 'http://localhost:5293';
+const BACKEND_IMAGE_BASE_URL = 'https://localhost:7039';
 
 export async function loadDishes() {
     try {

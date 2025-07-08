@@ -4,31 +4,31 @@ import { loadCart, updateCartIcon, confirmOrder, updateCartOnServer, removeFromC
 import { loadUserProfile, updateProfile, changePassword } from './profile.js';
 import { showSection } from './utils.js';
 
-// Export showDishDetails globally so it can be called directly from inline onclick or when setting hash
+
 window.showDishDetails = showDishDetails;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- URL Hash Navigation Handling Logic ---
+    
     const handleLocationHash = () => {
         const hash = window.location.hash;
 
-        // Lógica de visibilidad de la barra de navegación basada en autenticación
+       
         if (isAuthenticated()) {
             document.querySelector('.navbar').classList.remove('d-none');
-            document.getElementById('authSection').classList.add('d-none'); // Ensure auth form is hidden
+            document.getElementById('authSection').classList.add('d-none');
         } else {
-            document.querySelector('.navbar').classList.add('d-none'); // Hide navbar if not authenticated
-            showSection('authSection'); // Show authentication section
-            // If the hash is not #login or #register, force it to #login
+            document.querySelector('.navbar').classList.add('d-none'); 
+            showSection('authSection'); 
+            
             if (hash !== '#login' && hash !== '#register') {
                  window.location.hash = '#login';
-                 return; // Exit so handleLocationHash is called again with the correct hash
+                 return; 
             }
         }
 
         if (hash.startsWith('#details')) {
-            if (!isAuthenticated()) { // Add this check
-                window.location.hash = '#login'; // Redirect to login if trying to view details without auth
+            if (!isAuthenticated()) { 
+                window.location.hash = '#login'; 
                 return;
             }
             showSection('detailsSection');
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch (hash) {
             case '#menu':
-                if (!isAuthenticated()) { // Add this check
+                if (!isAuthenticated()) {
                     window.location.hash = '#login';
                     return;
                 }
@@ -61,23 +61,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadDishes();
                 break;
             case '#cart':
-                if (!isAuthenticated()) { // Add this check
+                if (!isAuthenticated()) {
                     window.location.hash = '#login';
                     return;
                 }
                 showSection('cartSection');
-                loadCart(); // Load cart data from the server
+                loadCart(); 
                 break;
             case '#profile':
-                if (!isAuthenticated()) { // Add this check
+                if (!isAuthenticated()) { 
                     window.location.hash = '#login';
                     return;
                 }
                 showSection('profileSection');
                 loadUserProfile();
                 break;
-            case '#login': // New case for the login section
-                if (isAuthenticated()) { // If already logged in, redirect to menu
+            case '#login': 
+                if (isAuthenticated()) { 
                     window.location.hash = '#menu';
                     return;
                 }
@@ -85,8 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('loginForm').classList.remove('d-none');
                 document.getElementById('registerForm').classList.add('d-none');
                 break;
-            case '#register': // New case for the registration section
-                if (isAuthenticated()) { // If already logged in, redirect to menu
+            case '#register': 
+                if (isAuthenticated()) { 
                     window.location.hash = '#menu';
                     return;
                 }
@@ -95,8 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('loginForm').classList.add('d-none');
                 break;
             default:
-                // If no hash or it doesn't match, and not authenticated, redirect to login.
-                // If authenticated, redirect to #menu.
+             
                 if (!isAuthenticated()) {
                     window.location.hash = '#login';
                 } else {
@@ -107,9 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.addEventListener('hashchange', handleLocationHash);
-    handleLocationHash(); // Call on page load
+    handleLocationHash(); 
 
-    // --- Authentication Event Listeners ---
+    
     document.getElementById('showRegisterLink').addEventListener('click', (e) => {
         e.preventDefault();
         window.location.hash = '#register';
@@ -124,46 +123,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         await loginUser(email, password);
-        // If login is successful, loginUser already redirects to #menu
-        updateCartIcon(); // Update cart icon after login
+        
+        updateCartIcon(); 
     });
 
     document.getElementById('registerBtn').addEventListener('click', async () => {
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
-        const name = document.getElementById('registerName').value;       // <-- Cambiado de fullName
-        const lastName = document.getElementById('registerLastName').value; // <-- Añadido
+        const name = document.getElementById('registerName').value;       
+        const lastName = document.getElementById('registerLastName').value; 
         const address = document.getElementById('registerAddress').value;
 
         if (password !== confirmPassword) {
-            Swal.fire('Error', 'Las contraseñas no coinciden.', 'error');
+            Swal.fire('Error', 'Passwords do not match', 'error');
             return;
         }
 
-        // Pasar name y lastName por separado
+        
         const success = await registerUser(email, password, name, lastName, address);
-        // La lógica de éxito con toastr ahora está dentro de registerUser, aquí solo si necesitas algo adicional
-        // if (success) {
-        //     Swal.fire('Success', 'Registration successful! You are now logged in.', 'success');
-        //     updateCartIcon();
-        // }
+     
         if (success) {
-             updateCartIcon(); // Update cart icon after registration
-             // registerUser ya maneja la redirección y toastr de éxito
+             updateCartIcon(); 
         }
     });
 
     const profileForm = document.getElementById('profileForm');
     if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Evita el envío del formulario por defecto
+            e.preventDefault(); 
 
             const name = document.getElementById('profileName').value;
             const lastName = document.getElementById('profileLastName').value;
             const address = document.getElementById('profileAddress').value;
 
-            // Llama a la función de actualización del perfil
+            
             await updateProfile(name, lastName, address);
         });
     }
@@ -171,13 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const changePasswordForm = document.getElementById('changePasswordForm');
     if (changePasswordForm) {
         changePasswordForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Evita el envío del formulario por defecto
+            e.preventDefault(); 
 
             const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmNewPassword = document.getElementById('confirmNewPassword').value;
 
-            // Llama a la función de cambio de contraseña
+            
             await changePassword(currentPassword, newPassword, confirmNewPassword);
         });
     }
@@ -185,11 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logoutButton').addEventListener('click', (e) => {
         e.preventDefault();
         logoutUser();
-        updateCartIcon(); // Update cart icon after logout (should be 0)
+        updateCartIcon(); 
     });
 
-    // --- Cart Event Listeners (Delegated using jQuery for dynamically added elements) ---
-    // Handle incrementing quantity
+   
     $(document).on('click', '.increment-quantity', function () {
         let dishId = parseInt($(this).data('dish-id'));
         let quantityInput = $(`input.quantity-input[data-dish-id="${dishId}"]`);
@@ -197,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCartOnServer(dishId, currentQuantity + 1);
     });
 
-    // Handle decrementing quantity
+    
     $(document).on('click', '.decrement-quantity', function () {
         let dishId = parseInt($(this).data('dish-id'));
         let quantityInput = $(`input.quantity-input[data-dish-id="${dishId}"]`);
@@ -205,22 +198,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentQuantity > 1) {
             updateCartOnServer(dishId, currentQuantity - 1);
         } else {
-            // If quantity goes to 0 or less, remove the item
+            
             removeFromCartOnServer(dishId);
         }
     });
 
-    // Handle removing item directly
+    
     $(document).on('click', '.remove-item', function () {
         let dishId = parseInt($(this).data('dish-id'));
         removeFromCartOnServer(dishId);
     });
 
-    // Event listener for the "Confirm Order" button
+    
     document.getElementById('confirmOrderBtn').addEventListener('click', async () => {
         await confirmOrder();
     });
 
-    // --- Additional Initialization ---
-    updateCartIcon(); // Ensure the cart icon is updated when the page loads, based on auth status
+    
+    updateCartIcon(); 
 });
