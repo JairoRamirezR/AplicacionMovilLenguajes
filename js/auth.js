@@ -2,32 +2,39 @@
 
 import { fetchData } from './utils.js';
 
-export async function registerUser(email, password, fullName, address) { // Descomentado
+export async function registerUser(email, password, name, lastName, address) { // <-- Cambiar fullName por name y lastName
     try {
-        const userData = { email, password, fullName, address }; // Adapta esto a tu modelo de registro de ASP.NET Identity
-        // Asegúrate que tu backend tenga un endpoint para registro que devuelva un token
-        // o maneje la cookie de autenticación de Identity
-        const response = await fetchData('/api/account/register', 'POST', userData); // Tu ruta API para registro
+        // Asegúrate de que los IDs de los inputs en index.html sean correctos
+        // index.html: registerName, registerLastName
+        const userData = {
+            email: email,
+            password: password,
+            name: name,         // <-- Enviar 'name'
+            lastName: lastName, // <-- Enviar 'lastName'
+            address: address
+        };
+        const response = await fetchData('/api/account/register', 'POST', userData);
 
-        // Si tu backend devuelve un JWT:
         if (response && response.token) {
-            localStorage.setItem('authToken', response.token); // Guardar el token
-            // Redirigir al menú principal
+            localStorage.setItem('authToken', response.token);
             window.location.hash = '#menu';
-            console.log('Registration successful and token saved.');
+            toastr.success('¡Registro exitoso! Ya estás logueado.'); // Usar toastr en lugar de Swal.fire para éxito
             return true;
         } else {
-            // Si el backend no devuelve un token (ej. usa solo cookies de Identity)
-            // Necesitarías que el backend establezca la cookie de autenticación directamente.
-            // Para el frontend, simplemente podrías redirigir a #menu si la operación fue exitosa.
-            window.location.hash = '#menu';
-            console.log('Registration successful (assuming cookie authentication).');
+            // Manejar caso donde no hay token pero el registro fue exitoso (menos común con JWT)
+            toastr.warning('Registro exitoso, pero no se recibió token de inmediato. Intente iniciar sesión.');
+            window.location.hash = '#login'; // Podrías redirigir a login para que el usuario inicie sesión
             return true;
         }
 
     } catch (error) {
         console.error('Error registering user:', error);
-        Swal.fire('Error', 'Error registering: ' + (error.message || 'Unknown error'), 'error'); // Usar SweetAlert2
+        // Si el error.message es un array de errores (como en BadRequest de ASP.NET Core)
+        if (error.errors && Array.isArray(error.errors)) {
+            error.errors.forEach(err => toastr.error(err));
+        } else {
+            toastr.error('Error al registrar: ' + (error.message || 'Error desconocido'));
+        }
         return false;
     }
 }

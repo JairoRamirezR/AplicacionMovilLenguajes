@@ -133,18 +133,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
-        const fullName = document.getElementById('registerName').value;
+        const name = document.getElementById('registerName').value;       // <-- Cambiado de fullName
+        const lastName = document.getElementById('registerLastName').value; // <-- Añadido
         const address = document.getElementById('registerAddress').value;
 
         if (password !== confirmPassword) {
-            Swal.fire('Error', 'Passwords do not match.', 'error');
+            Swal.fire('Error', 'Las contraseñas no coinciden.', 'error');
             return;
         }
 
-        const success = await registerUser(email, password, fullName, address);
+        // Pasar name y lastName por separado
+        const success = await registerUser(email, password, name, lastName, address);
+        // La lógica de éxito con toastr ahora está dentro de registerUser, aquí solo si necesitas algo adicional
+        // if (success) {
+        //     Swal.fire('Success', 'Registration successful! You are now logged in.', 'success');
+        //     updateCartIcon();
+        // }
         if (success) {
-            Swal.fire('Success', 'Registration successful! You are now logged in.', 'success');
-            updateCartIcon(); // Update cart icon after registration
+             updateCartIcon(); // Update cart icon after registration
+             // registerUser ya maneja la redirección y toastr de éxito
         }
     });
 
