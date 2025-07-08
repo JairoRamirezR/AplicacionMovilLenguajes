@@ -1,0 +1,46 @@
+/* css/style.css */
+
+body {
+    background-color: #f8f9fa; /* Light background color */
+}
+
+.navbar-brand, .nav-link {
+    font-weight: bold;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.img-fluid {
+    border-radius: 8px;
+}
+
+/* Adjustments for forms and buttons on mobile */
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+    height: 48px; /* Comfortable height for touch */
+}
+
+button.btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1.1em;
+}
+
+/* Spacing for menu items */
+#dishList .card {
+    margin-bottom: 15px;
+}
+
+/* Improve readability on small screens */
+p, label {
+    font-size: 1.05em;
+}
+
+/* Hide sections by default, then JavaScript will show them */
+section:not(.active-section) {
+    display: none;
+}
