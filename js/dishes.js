@@ -72,7 +72,7 @@ export async function showDishDetails(dishId) {
                 <h2>${dish.name}</h2>
                 <img src="${imageUrlToDisplay}" class="img-fluid mb-3" style="max-height: 200px;" alt="${dish.name}">
                 <p><strong>Price:</strong> ${dish.price.toFixed(2)}</p>
-                <p><strong>Description:</strong> ${stripHtml(dish.description)}</p> <button class="btn btn-success add-to-cart-btn"
+                <p><strong>Description:</strong> ${dish.description}</p> <button class="btn btn-success add-to-cart-btn"
                         data-dish-id="${dish.id}"
                         data-dish-name="${dish.name}"
                         data-dish-price="${dish.price}">Add to Cart</button>
