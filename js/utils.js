@@ -1,6 +1,6 @@
 // js/utils.js
 
-const API_BASE_URL = 'https://localhost:7039';
+const API_BASE_URL = 'http://localhost:5293';
 
 export async function fetchData(url, method = 'GET', data = null) {
     const token = localStorage.getItem('authToken');

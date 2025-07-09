@@ -1,3 +1,5 @@
+// js/app.js
+
 import { registerUser, loginUser, logoutUser, isAuthenticated } from './auth.js';
 import { loadDishes, showDishDetails } from './dishes.js';
 import { loadCart, updateCartIcon, confirmOrder, updateCartOnServer, removeFromCartOnServer } from './cart.js';
@@ -12,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleLocationHash = () => {
         const hash = window.location.hash;
 
-       
+        
         if (isAuthenticated()) {
             document.querySelector('.navbar').classList.remove('d-none');
             document.getElementById('authSection').classList.add('d-none');
@@ -21,8 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showSection('authSection'); 
             
             if (hash !== '#login' && hash !== '#register') {
-                 window.location.hash = '#login';
-                 return; 
+                window.location.hash = '#login';
+                return; 
             }
         }
 
@@ -95,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('loginForm').classList.add('d-none');
                 break;
             default:
-             
+              
                 if (!isAuthenticated()) {
                     window.location.hash = '#login';
                 } else {
@@ -131,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
-        const name = document.getElementById('registerName').value;       
+        const name = document.getElementById('registerName').value;          
         const lastName = document.getElementById('registerLastName').value; 
         const address = document.getElementById('registerAddress').value;
 
@@ -142,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         
         const success = await registerUser(email, password, name, lastName, address);
-     
+       
         if (success) {
              updateCartIcon(); 
         }
@@ -181,6 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutUser();
         updateCartIcon(); 
     });
+
+    const dishSearchInput = document.getElementById('dishSearchInput');
+    if (dishSearchInput) {
+        dishSearchInput.addEventListener('input', () => {
+            const searchTerm = dishSearchInput.value.trim();
+            if (window.location.hash === '#menu') {
+                loadDishes(searchTerm);
+            }
+        });
+    }
 
    
     $(document).on('click', '.increment-quantity', function () {
